@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import banco.utils.Fechas;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,31 +35,27 @@ public class DAOClienteMorosoImpl implements DAOClienteMoroso {
 		 *      si hay algún error que necesita ser informado al usuario. 
 		 */
 		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
 		ArrayList<ClienteMorosoBean> morosos = new ArrayList<ClienteMorosoBean>();
 		PrestamoBean prestamo = null;
 		ClienteBean cliente = null;
 		
-		ClienteMorosoBean moroso1 = new ClienteMorosoBeanImpl();
-		prestamo = daoPrestamo.recuperarPrestamo(1); // El prestamo 1 tiene cuotas atrasadas - valor que deberá ser obtenido por la SQL
+		java.sql.Statement st = this.conexion.createStatement();
+		String query="SELECT nro_prestamo, COUNT(fecha_venc) FROM Prestamo NATURAL JOIN Pago WHERE fecha_pago IS NULL AND fecha_venc < CURDATE() GROUP BY nro_prestamo HAVING COUNT(fecha_venc) > 1;";
+		java.sql.ResultSet rs = st.executeQuery(query);
+		
+		while(st.next()){
+		ClienteMorosoBean moroso = new ClienteMorosoBeanImpl();
+		prestamo = daoPrestamo.recuperarPrestamo(st.getInt("nro_prestamo")); // El prestamo 1 tiene cuotas atrasadas - valor que deberá ser obtenido por la SQL
 		cliente = daoCliente.recuperarCliente(prestamo.getNroCliente());
 		moroso1.setCliente(cliente);
 		moroso1.setPrestamo(prestamo);
-		moroso1.setCantidadCuotasAtrasadas(2);  //valor que deberá ser obtenido por la SQL
-		morosos.add(moroso1);
-
-		ClienteMorosoBean moroso2 = new ClienteMorosoBeanImpl();
-		prestamo = daoPrestamo.recuperarPrestamo(3); // El prestamo 3 tiene cuotas atrasadas - valor que deberá ser obtenido por la SQL
-		cliente = daoCliente.recuperarCliente(prestamo.getNroCliente());
-		moroso2.setCliente(cliente);
-		moroso2.setPrestamo(prestamo);
-		moroso2.setCantidadCuotasAtrasadas(6);  //valor que deberá ser obtenido por la SQL
-		morosos.add(moroso2);
+		moroso1.setCantidadCuotasAtrasadas(st.getInt("COUNT(fecha_venc)"));  //valor que deberá ser obtenido por la SQL
+		morosos.add(moroso);
+		}
 		
+		rs.close();
+		st.close();
 		return morosos;		
-		// Fin datos estáticos de prueba.
 		
 	}
 

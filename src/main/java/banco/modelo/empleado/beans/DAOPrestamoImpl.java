@@ -24,16 +24,29 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 	
 	@Override
 	public void crearActualizarPrestamo(PrestamoBean prestamo) throws Exception {
-
-		logger.info("Creación o actualizacion del prestamo.");
-		logger.debug("meses : {}", prestamo.getCantidadMeses());
-		logger.debug("monto : {}", prestamo.getMonto());
-		logger.debug("tasa : {}", prestamo.getTasaInteres());
-		logger.debug("interes : {}", prestamo.getInteres());
-		logger.debug("cuota : {}", prestamo.getValorCuota());
-		logger.debug("legajo : {}", prestamo.getLegajo());
-		logger.debug("cliente : {}", prestamo.getNroCliente());
 		
+		
+		logger.info("Creación o actualizacion del prestamo.");
+		String insert="INSERT INTO Prestamo (nro_prestamo, fecha, cant_meses, monto, tasa_interes, interes, valor_cuota, legajo, nro_cliente) VALUES (?, ?, ?,? ,?, ?, ?, ?, ?);";
+		java.sql.PreparedStatement st = this.conexion.prepareStatement(insert);
+		st.setInt(1,prestamo.getNroPrestamo());
+		st.setDate(2,Fechas.convertirDateADateSQL(prestamo.getFecha()));
+		logger.debug("meses : {}", prestamo.getCantidadMeses());
+		st.setInt(3,prestamo.getCantidadMeses());
+		logger.debug("monto : {}", prestamo.getMonto());
+		st.setDouble(4,prestamo.getMonto());
+		logger.debug("tasa : {}", prestamo.getTasaInteres());
+		st.setDouble(5,prestamo.getTasaInteres());
+		logger.debug("interes : {}", prestamo.getInteres());
+		st.setDouble(6,prestamo.getInteres());
+		logger.debug("cuota : {}", prestamo.getValorCuota());
+		st.setDouble(7,prestamo.getValorCuota());
+		logger.debug("legajo : {}", prestamo.getLegajo());
+		st.setInt(8,prestamo.getLegajo());
+		logger.debug("cliente : {}", prestamo.getNroCliente());
+		st.setInt(9,prestamo.getNroCliente());
+		st.executeUpdate();
+		st.close();
 		/**
 		 * TODO Crear o actualizar el Prestamo segun el PrestamoBean prestamo. 
 		 *      Si prestamo tiene nroPrestamo es una actualizacion, si el nroPrestamo es null entonces es un nuevo prestamo.
@@ -60,25 +73,31 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 		 * @throws Exception si hubo algun problema de conexión
 		 */		
 
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 * Retorna un PretamoBean con información del prestamo nro 4
-		 */
 		PrestamoBean prestamo = null;
-			
+		
+		java.sql.Statement st = this.conexion.createStatement();
+		String query="SELECT * FROM Prestamo;";
+		java.sql.ResultSet rs = st.executeQuery(query);
+		boolean encontrado=false;
+		while(rs.next() && !econtrado){
+		encontrado= (nroPrestamo == rs.getInt("nro_prestamo"));
+		if(encontrado){
 		prestamo = new PrestamoBeanImpl();
-		prestamo.setNroPrestamo(4);
-		prestamo.setFecha(Fechas.convertirStringADate("2021-04-05"));
-		prestamo.setCantidadMeses(6);
-		prestamo.setMonto(20000);
-		prestamo.setTasaInteres(24);
-		prestamo.setInteres(2400);
-		prestamo.setValorCuota(3733.33);
-		prestamo.setLegajo(2);
-		prestamo.setNroCliente(2);
-   	
+		prestamo.setNroPrestamo(nroPrestamo);
+		prestamo.setFecha(Fechas.convertirStringADate(rs.getString("fecha")));
+		prestamo.setCantidadMeses(rs.getInt("cant_meses"));
+		prestamo.setMonto(rs.getDouble("monto"));
+		prestamo.setTasaInteres(rs.getDouble("tasa_interes"));
+		prestamo.setInteres(rs.getDouble("interes"));
+		prestamo.setValorCuota(rs.getDouble("valor_cuota"));
+		prestamo.setLegajo(rs.getInt("legajo"));
+		prestamo.setNroCliente(rs.getInt("nro_cliente"));
+		}
+		}
+		
+		rs.close();
+		st.close();
 		return prestamo;
-		// Fin datos estáticos de prueba.
 	}
 
 }
