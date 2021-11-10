@@ -44,6 +44,8 @@ public class DAOClienteImpl implements DAOCliente {
 		cliente.setDireccion(rs.getString("direccion"));
 		cliente.setTelefono(rs.getString("telefono"));
 		cliente.setFechaNacimiento(Fechas.convertirStringADate(rs.getString("fecha_nac")));
+		rs.close();
+		st.close();
 	
 		return cliente;		
 
@@ -71,6 +73,8 @@ public class DAOClienteImpl implements DAOCliente {
 		cliente.setDireccion(rs.getString("direccion"));
 		cliente.setTelefono(rs.getString("telefono"));
 		cliente.setFechaNacimiento(Fechas.convertirStringADate(rs.getString("fecha_nac")));
+		rs.close();
+		st.close();
 		
 		return cliente;		
 

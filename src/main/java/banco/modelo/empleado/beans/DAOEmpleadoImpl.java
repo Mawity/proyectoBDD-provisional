@@ -47,6 +47,9 @@ public class DAOEmpleadoImpl implements DAOEmpleado {
 		empleado.setPassword(rs.getString("password")); // select md5(9);
 		empleado.setNroSucursal(rs.getInt("nro_sucursal"));
 		
+		rs.close();
+		st.close();
+		
 		return empleado;
 
 	}
