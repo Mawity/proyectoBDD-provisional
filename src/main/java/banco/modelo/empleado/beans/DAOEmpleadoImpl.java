@@ -29,26 +29,26 @@ public class DAOEmpleadoImpl implements DAOEmpleado {
 		 *      De ocurre algun error deberá generar una excepción.		 * 
 		 */		
 		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
-		
+
 		EmpleadoBean empleado = null;
 		
 		empleado = new EmpleadoBeanImpl();
-		empleado.setLegajo(9);
-		empleado.setApellido("ApEmp9");
-		empleado.setNombre("NomEmp9");
-		empleado.setTipoDocumento("DNI");
-		empleado.setNroDocumento(9);
-		empleado.setDireccion("DirEmp9");
-		empleado.setTelefono("999-9999");
-		empleado.setCargo("Empleado de Prestamos");
-		empleado.setPassword("45c48cce2e2d7fbdea1afc51c7c6ad26"); // select md5(9);
-		empleado.setNroSucursal(7);
+		java.sql.Statement st = this.conexion.createStatement();
+		String query="SELECT apellido, nombre, tipo_doc, nro_doc, direccion, telefono, cargo, password, nro_sucursal FROM Empleado WHERE legajo= "+legajo+";";
+		java.sql.ResultSet rs = st.executeQuery(query);
+		empleado.setLegajo(legajo);
+		empleado.setApellido(rs.getString("apellido"));
+		empleado.setNombre(rs.getString("nombre"));
+		empleado.setTipoDocumento(rs.getString("tipo_doc"));
+		empleado.setNroDocumento(rs.getInt("nro_doc"));
+		empleado.setDireccion(rs.getString("direccion"));
+		empleado.setTelefono(rs.getString("telefono"));
+		empleado.setCargo(rs.getString("cargo"));
+		empleado.setPassword(rs.getString("password")); // select md5(9);
+		empleado.setNroSucursal(rs.getInt("nro_sucursal"));
 		
 		return empleado;
-		// Fin datos estáticos de prueba.
+
 	}
 
 }
