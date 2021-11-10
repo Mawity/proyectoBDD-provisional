@@ -27,23 +27,24 @@ public class DAOClienteImpl implements DAOCliente {
 		
 		/**
 		 * TODO Recuperar el cliente que tenga un documento que se corresponda con los parámetros recibidos.  
-		 *		Deberá generar o propagar una excepción si no existe dicho cliente o hay un error de conexión.		
+		 *		Deberá generar o propagar una excepción si no existe dicho cliente o hay un error de conexión.
+		 * Dejo el TODO por si hay algún error, propago la excepción que tiran el createStatement() o el executeQuery()
 		 */
 		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
 		
 		ClienteBean cliente = new ClienteBeanImpl();
-		cliente.setNroCliente(3);
-		cliente.setApellido("Apellido3");
-		cliente.setNombre("Nombre3");
-		cliente.setTipoDocumento("DNI");
-		cliente.setNroDocumento(3);
-		cliente.setDireccion("Direccion3");
-		cliente.setTelefono("0291-3333333");
-		cliente.setFechaNacimiento(Fechas.convertirStringADate("1983-03-03","13:30:00"));
-		
+		java.sql.Statement st = this.conexion.createStatement();
+		String query="SELECT nro_cliente, apellido, nombre, direccion, telefono, fecha_nac FROM Cliente WHERE tipo_doc= "+tipoDoc+" AND nro_doc= "+nroDoc+";";
+		java.sql.ResultSet rs = st.executeQuery(query);
+		cliente.setNroCliente(rs.getInt("nro_cliente"));
+		cliente.setApellido(rs.getString("apellido"));
+		cliente.setNombre(rs.getString("nombre"));
+		cliente.setTipoDocumento(tipoDoc);
+		cliente.setNroDocumento(nroDoc);
+		cliente.setDireccion(rs.getString("direccion"));
+		cliente.setTelefono(rs.getString("telefono"));
+		cliente.setFechaNacimiento(Fechas.convertirStringADate(rs.getString("fecha_nac")));
+	
 		return cliente;		
 
 	}
@@ -53,26 +54,25 @@ public class DAOClienteImpl implements DAOCliente {
 		logger.info("recupera el cliente por nro de cliente.");
 		
 		/**
-		 * TODO Recuperar el cliente que tenga un número de cliente de acuerdo al parámetro recibido.  
-		 *		Deberá generar o propagar una excepción si no existe dicho cliente o hay un error de conexión.		
+		 * TODO Recuperar el cliente que tenga un documento que se corresponda con los parámetros recibidos.  
+		 *		Deberá generar o propagar una excepción si no existe dicho cliente o hay un error de conexión.
+		 * Dejo el TODO por si hay algún error, propago la excepción que tiran el createStatement() o el executeQuery()
 		 */
-		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
-		
+		 
 		ClienteBean cliente = new ClienteBeanImpl();
-		cliente.setNroCliente(3);
-		cliente.setApellido("Apellido3");
-		cliente.setNombre("Nombre3");
-		cliente.setTipoDocumento("DNI");
-		cliente.setNroDocumento(3);
-		cliente.setDireccion("Direccion3");
-		cliente.setTelefono("0291-3333333");
-		cliente.setFechaNacimiento(Fechas.convertirStringADate("1983-03-03","13:30:00"));
+		java.sql.Statement st = this.conexion.createStatement();
+		String query="SELECT apellido, nombre, tipo_doc, nro_doc, direccion, telefono, fecha_nac FROM Cliente WHERE nro_cliente= "+nroCliente+";";
+		java.sql.ResultSet rs = st.executeQuery(query);
+		cliente.setNroCliente(nroCliente);
+		cliente.setApellido(rs.getString("apellido"));
+		cliente.setNombre(rs.getString("nombre"));
+		cliente.setTipoDocumento(rs.getString("tipo_doc"));
+		cliente.setNroDocumento(rs.getInt("nro_doc"));
+		cliente.setDireccion(rs.getString("direccion"));
+		cliente.setTelefono(rs.getString("telefono"));
+		cliente.setFechaNacimiento(Fechas.convertirStringADate(rs.getString("fecha_nac")));
 		
 		return cliente;		
-		// Fin datos estáticos de prueba.
 
 	}
 
