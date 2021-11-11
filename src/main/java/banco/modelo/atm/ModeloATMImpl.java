@@ -128,7 +128,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		+------------+----------+---------------+---------+----------+---------+
  		 */
 		 
-		 char comillas= '"'
+		 char comillas= '"';
 		 java.sql.ResultSet rs=consulta("SELECT * FROM "
 										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
 										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
@@ -185,7 +185,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		java.sql.ResultSet rsaux= consulta("SELECT CURDATE()");
 		Date ahora= convertirStringADate(rsaux.getString("CURDATE()"))
 		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw Exception("Fecha Invalida");
-		char comillas= '"'
+		char comillas= '"';
 		java.sql.ResultSet rs=consulta("SELECT * FROM "
 										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
 										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
