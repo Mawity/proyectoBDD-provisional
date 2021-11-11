@@ -9,6 +9,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
+import java.security.MessageDigest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,13 +61,22 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 *      Si la autenticación no es exitosa porque no coincide el pin o la tarjeta no existe deberá retornar falso
 		 *      y si hubo algún otro error deberá producir una excepción.
 		 */
+		boolean validado=false;
+		char comillas= '"';
+		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5(" +comillas + pin + comillas +");");
+		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
-		this.tarjeta = tarjeta;
-        return true;
-		// Fin datos estáticos de prueba.
+		if(rs.next()!=false){
+				long tar= Long.parseLong(tarjeta);
+				validado= tar == rs.getLong("nro_tarjeta");	
+				if (validado) this.tarjeta=tarjeta;
+		}
+			}catch(NumberFormatException||NullPointerException e){}
+		finally{
+			rs.close();
+			return validado;
+		}
+
 	}
 	
 	
@@ -83,13 +93,10 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 * TODO Obtiene el saldo.
 		 *      Debe capturar la excepción SQLException y propagar una Exception más amigable.
 		 */
-
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.
-		 */
-		Double saldo = (double) 1001;		
+		java.sql.ResultSet rs=consulta("SELECT saldo FROM Tarjeta NATURAL JOIN Caja_Ahorro WHERE nro_tarjeta= "+this.tarjeta+" ;)
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		Double saldo = parseMonto(rs.getString("saldo"));
 		return saldo;
-		// Fin datos estáticos de prueba.
 	}	
 
 	@Override
@@ -263,16 +270,25 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 	public int parseCuenta(String p_cuenta) throws Exception {
 		
 		logger.info("Intenta realizar el parsing de un codigo de cuenta {}", p_cuenta);
-
+		
 		/**
 		 * TODO Verifica que el codigo de la cuenta sea valido. 
 		 * 		Debe capturar la excepción SQLException y propagar una Exception más amigable. 
 		 * 		Debe generar excepción si la cuenta es vacia, entero negativo o no puede generar el parsing.
 		 * retorna la cuenta en formato int
 		 */	
-		
-		logger.info("Encontró la cuenta en la BD.");
-        return 1;
+		if(p_cuenta==null)
+			throw new Exception("La cuenta no puede ser vacía");
+		try {
+			int cuenta= Integer.parseInt(p_cuenta);
+			if(cuenta<0)
+				throw new Exception("El número de cuenta no puede ser negativo");
+			logger.info("Encontró la cuenta en la BD.");
+			return cuenta;
+		} 
+		catch(NumberFormatException e){
+			throw new Exception("No pudo generar el parcing de la cuenta");
+		}
 	}	
 	
 	@Override

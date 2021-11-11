@@ -31,10 +31,10 @@ public class DAOClienteImpl implements DAOCliente {
 		 * Dejo el TODO por si hay algún error, propago la excepción que tiran el createStatement() o el executeQuery()
 		 */
 		
-		
+		char comillas= '"';
 		ClienteBean cliente = new ClienteBeanImpl();
 		java.sql.Statement st = this.conexion.createStatement();
-		String query="SELECT nro_cliente, apellido, nombre, direccion, telefono, fecha_nac FROM Cliente WHERE tipo_doc= "+tipoDoc+" AND nro_doc= "+nroDoc+";";
+		String query="SELECT nro_cliente, apellido, nombre, direccion, telefono, fecha_nac FROM Cliente WHERE tipo_doc= "+comillas+tipoDoc+comillas+" AND nro_doc= "+nroDoc+";";
 		java.sql.ResultSet rs = st.executeQuery(query);
 		cliente.setNroCliente(rs.getInt("nro_cliente"));
 		cliente.setApellido(rs.getString("apellido"));

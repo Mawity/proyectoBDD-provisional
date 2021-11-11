@@ -48,13 +48,21 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Si la autenticación no es exitosa porque el legajo no es válido o el password es incorrecto
 		 *      deberá retornar falso y si hubo algún otro error deberá producir una excepción.
 		 */
-		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
-		this.legajo = 1;
-		return true;
-		// Fin datos estáticos de prueba.
+		boolean validado=false;
+		char comillas= '"';
+		java.sql.ResultSet rs=consulta("SELECT legajo FROM Empleado WHERE password= md5(" +comillas + password + comillas +");");
+		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		try{
+		if(rs.next()!=false){
+				int leg= Integer.parseInt(legajo);
+				validado= leg == rs.getInt("legajo");	
+				if (validado) this.legajo=leg;
+		}
+			}catch(NumberFormatException||NullPointerException e){}
+		finally{
+			rs.close();
+			return validado;
+		}
 	}
 	
 	@Override
@@ -76,14 +84,13 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 * TODO Debe retornar una lista de strings con los tipos de documentos. 
 		 *      Deberia propagar una excepción si hay algún error en la consulta.
 		 */
-		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
+		java.sql.ResultSet rs= consulta("(SELECT DISTINCT tipo_doc FROM Cliente) UNION (SELECT DISTINCT tipo_doc FROM Empleado);");
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<String> tipos = new ArrayList<String>();
-		tipos.add("DNI");
+		while(rs.next()){
+		tipos.add(rs.getString("tipo_doc"));
+		}
 		return tipos;
-		// Fin datos estáticos de prueba.
 	}	
 
 	@Override
