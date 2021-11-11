@@ -93,7 +93,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 * TODO Obtiene el saldo.
 		 *      Debe capturar la excepción SQLException y propagar una Exception más amigable.
 		 */
-		java.sql.ResultSet rs=consulta("SELECT saldo FROM Tarjeta NATURAL JOIN Caja_Ahorro WHERE nro_tarjeta= "+this.tarjeta+" ;)
+		java.sql.ResultSet rs=consulta("SELECT saldo FROM Tarjeta NATURAL JOIN Caja_Ahorro WHERE nro_tarjeta= "+this.tarjeta+" ;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		Double saldo = parseMonto(rs.getString("saldo"));
 		return saldo;
