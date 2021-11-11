@@ -127,51 +127,36 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		| 2021-09-12 | 15:00:00 | transferencia | -400.00 |       41 |       7 |
 		+------------+----------+---------------+---------+----------+---------+
  		 */
+		 
+		 char comillas= '"'
+		 java.sql.ResultSet rs=consulta("SELECT * FROM "
+										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
+										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
+										"SELECT fecha, "+comillas+"extraccion"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
+										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Extraccion NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
+										"SELECT fecha, "+comillas+"debito"+comillas+" AS tipo, monto, NULL AS cod_caja, NULL AS destino"+
+										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Debito NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
+										"SELECT fecha, "+comillas+"deposito"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
+										"FROM (Tarjeta NATURAL JOIN Caja_Ahorro NATURAL JOIN Deposito NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" ) GROUP BY fecha;");
 		
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
+		for(int i=0,i<cantidad&&rs.next(),i++){
 		TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
-		fila1.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-16","11:10:00"));
-		fila1.setTransaccionTipo("transferencia");
-		fila1.setTransaccionMonto(-700.00);
-		fila1.setTransaccionCodigoCaja(18);
-		fila1.setCajaAhorroDestinoNumero(32);
+		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+		fila1.setTransaccionTipo(rs.getString("tipo"));
+		fila1.setTransaccionMonto(parseMonto(rs.getString("monto")));
+		fila1.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
+		fila1.setCajaAhorroDestinoNumero(rs.getInt("destino"));
 		lista.add(fila1);
-
-		TransaccionCajaAhorroBean fila2 = new TransaccionCajaAhorroBeanImpl();
-		fila2.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-15","17:20:00"));
-		fila2.setTransaccionTipo("extraccion");
-		fila2.setTransaccionMonto(-200.00);
-		fila2.setTransaccionCodigoCaja(2);
-		fila2.setCajaAhorroDestinoNumero(0);	
-		lista.add(fila2);
-		
-		TransaccionCajaAhorroBean fila3 = new TransaccionCajaAhorroBeanImpl();
-		fila3.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-14","09:03:00"));
-		fila3.setTransaccionTipo("deposito");
-		fila3.setTransaccionMonto(1600.00);
-		fila3.setTransaccionCodigoCaja(2);
-		fila3.setCajaAhorroDestinoNumero(0);	
-		lista.add(fila3);		
-
-		TransaccionCajaAhorroBean fila4 = new TransaccionCajaAhorroBeanImpl();
-		fila4.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-13","13:30:00"));
-		fila4.setTransaccionTipo("debito");
-		fila4.setTransaccionMonto(-50.00);
-		fila4.setTransaccionCodigoCaja(0);
-		fila4.setCajaAhorroDestinoNumero(0);	
-		lista.add(fila4);	
-		
-		TransaccionCajaAhorroBean fila5 = new TransaccionCajaAhorroBeanImpl();
-		fila5.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-12","15:00:00"));
-		fila5.setTransaccionTipo("transferencia");
-		fila5.setTransaccionMonto(-400.00);
-		fila5.setTransaccionCodigoCaja(41);
-		fila5.setCajaAhorroDestinoNumero(7);	
-		lista.add(fila5);
+		}
 		
 		return lista;
 		
-		// Fin datos estáticos de prueba.
 	}	
 	
 	@Override
@@ -197,53 +182,38 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		| 2021-09-12 | 15:00:00 | transferencia | -400.00 |       41 |       7 |
 		+------------+----------+---------------+---------+----------+---------+
  		 */
+		java.sql.ResultSet rsaux= consulta("SELECT CURDATE()");
+		Date ahora= convertirStringADate(rsaux.getString("CURDATE()"))
+		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw Exception("Fecha Invalida");
+		char comillas= '"'
+		java.sql.ResultSet rs=consulta("SELECT * FROM "
+										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
+										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
+										"SELECT fecha, "+comillas+"extraccion"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
+										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Extraccion NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
+										"SELECT fecha, "+comillas+"debito"+comillas+" AS tipo, monto, NULL AS cod_caja, NULL AS destino"+
+										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Debito NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
+										"SELECT fecha, "+comillas+"deposito"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
+										"FROM (Tarjeta NATURAL JOIN Caja_Ahorro NATURAL JOIN Deposito NATURAL JOIN Transaccion)" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" ) WHERE fecha > "+convertirDateADateSQL(desde)+" AND fecha < "+ convertirDateADateSQL(hasta) +
+										" GROUP BY fecha;");
 		
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
+		while(rs.next()){
 		TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
-		fila1.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-16","11:10:00"));
-		fila1.setTransaccionTipo("transferencia");
-		fila1.setTransaccionMonto(-700.00);
-		fila1.setTransaccionCodigoCaja(18);
-		fila1.setCajaAhorroDestinoNumero(32);
+		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+		fila1.setTransaccionTipo(rs.getString("tipo"));
+		fila1.setTransaccionMonto(parseMonto(rs.getString("monto")));
+		fila1.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
+		fila1.setCajaAhorroDestinoNumero(rs.getInt("destino"));
 		lista.add(fila1);
-
-		TransaccionCajaAhorroBean fila2 = new TransaccionCajaAhorroBeanImpl();
-		fila2.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-15","17:20:00"));
-		fila2.setTransaccionTipo("extraccion");
-		fila2.setTransaccionMonto(-200.00);
-		fila2.setTransaccionCodigoCaja(2);
-		fila2.setCajaAhorroDestinoNumero(0);	
-		lista.add(fila2);
-		
-		TransaccionCajaAhorroBean fila3 = new TransaccionCajaAhorroBeanImpl();
-		fila3.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-14","09:03:00"));
-		fila3.setTransaccionTipo("deposito");
-		fila3.setTransaccionMonto(1600.00);
-		fila3.setTransaccionCodigoCaja(2);
-		fila3.setCajaAhorroDestinoNumero(0);	
-		lista.add(fila3);		
-
-		TransaccionCajaAhorroBean fila4 = new TransaccionCajaAhorroBeanImpl();
-		fila4.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-13","13:30:00"));
-		fila4.setTransaccionTipo("debito");
-		fila4.setTransaccionMonto(-50.00);
-		fila4.setTransaccionCodigoCaja(0);
-		fila4.setCajaAhorroDestinoNumero(0);	
-		lista.add(fila4);	
-		
-		TransaccionCajaAhorroBean fila5 = new TransaccionCajaAhorroBeanImpl();
-		fila5.setTransaccionFechaHora(Fechas.convertirStringADate("2021-09-12","15:00:00"));
-		fila5.setTransaccionTipo("transferencia");
-		fila5.setTransaccionMonto(-400.00);
-		fila5.setTransaccionCodigoCaja(41);
-		fila5.setCajaAhorroDestinoNumero(7);	
-		lista.add(fila5);
-		
-		logger.debug("Retorna una lista con {} elementos", lista.size());
+		}
 		
 		return lista;
-		
-		// Fin datos estáticos de prueba.
 	}
 	
 	@Override

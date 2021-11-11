@@ -25,6 +25,7 @@ import banco.modelo.empleado.beans.DAOPrestamoImpl;
 import banco.modelo.empleado.beans.EmpleadoBean;
 import banco.modelo.empleado.beans.PagoBean;
 import banco.modelo.empleado.beans.PrestamoBean;
+import banco.utils.Parsing;
 
 public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 
@@ -104,12 +105,12 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup] y la cantidadMeses.
 		 */
 		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
-		double tasa = 23.00;
+		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE periodo= "+cantidadMeses+" AND monto_inf < "+Double.toString(monto)+" AND monto_sup > "+Double.toString(monto)+" ;");
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango y la cantidad de meses");
+		double tasa = parseMonto(rs.getString("tasa"));
    		return tasa;
-     	// Fin datos estáticos de prueba.
+
 	}
 
 	@Override
@@ -140,19 +141,15 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Deberia propagar una excepción si hay algún error de conexión o 
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup].
 		 */
-		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */		
+		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE monto_inf < "+Double.toString(monto)+" AND monto_sup > "+Double.toString(monto)+" ;");
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango");
 		ArrayList<Integer> cantMeses = new ArrayList<Integer>();
-		cantMeses.add(9);
-		cantMeses.add(18);
-		cantMeses.add(27);
-		cantMeses.add(54);
-		cantMeses.add(108);
-		
+		do{
+		cantMeses.add(rs.getInt("periodo"));
+		} while(rs.next());
 		return cantMeses;
-		// Fin datos estáticos de prueba.
+
 	}
 
 	@Override	
@@ -166,11 +163,16 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Si hay una excepción la propaga con un mensaje apropiado.
 		 */
 		
-		/*
-		 * Datos estáticos de prueba. Quitar y reemplazar por código que recupera los datos reales.  
-		 */
-		return null;
-		// Fin datos estáticos de prueba.
+		Integer pres=null;
+		ArrayList<ClienteMorosoBean> morosos= recuperarClientesMorosos();
+		Iterator<ClienteMorosoBean> cm= morosos.iterator();
+		while(cm.hasNext()&&(pres==null)){
+			ClienteMorosoBean cliente=cm.next();
+			if(cliente.getCliente().getNroCliente()==nroCliente) pres=cliente.getPrestamo().getNroPrestamo();
+		}
+		
+		return pres;
+	
 	}
 
 
