@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 				validado= leg == rs.getInt("legajo");	
 				if (validado) this.legajo=leg;
 		}
-			}catch(NumberFormatException||NullPointerException e){}
+			}catch(NumberFormatException|NullPointerException e){}
 		finally{
 			rs.close();
 			return validado;
@@ -79,7 +80,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 	}	
 	
 	@Override
-	public ArrayList<String> obtenerTiposDocumento() {
+	public ArrayList<String> obtenerTiposDocumento() throws Exception{
 		logger.info("recupera los tipos de documentos.");
 		/** 
 		 * TODO Debe retornar una lista de strings con los tipos de documentos. 
@@ -108,7 +109,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE periodo= "+cantidadMeses+" AND monto_inf < "+Double.toString(monto)+" AND monto_sup > "+Double.toString(monto)+" ;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango y la cantidad de meses");
-		double tasa = parseMonto(rs.getString("tasa"));
+		double tasa = Parsing.parseMonto(rs.getString("tasa"));
    		return tasa;
 
 	}
