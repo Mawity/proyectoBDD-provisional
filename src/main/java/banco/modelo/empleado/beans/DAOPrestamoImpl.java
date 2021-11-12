@@ -79,7 +79,7 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 		String query="SELECT * FROM Prestamo;";
 		java.sql.ResultSet rs = st.executeQuery(query);
 		boolean encontrado=false;
-		while(rs.next() && !econtrado){
+		while(rs.next() && !encontrado){
 		encontrado= (nroPrestamo == rs.getInt("nro_prestamo"));
 		if(encontrado){
 		prestamo = new PrestamoBeanImpl();

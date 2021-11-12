@@ -51,7 +51,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 	}
 
 	@Override
-	public boolean autenticarUsuarioAplicacion(String tarjeta, String pin)	{
+	public boolean autenticarUsuarioAplicacion(String tarjeta, String pin) throws Exception	{
 		
 		logger.info("Se intenta autenticar la tarjeta {} con pin {}", tarjeta, pin);
 
@@ -65,13 +65,13 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		char comillas= '"';
 		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5(" +comillas + pin + comillas +");");
 		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
-		
+		try {
 		if(rs.next()!=false){
 				long tar= Long.parseLong(tarjeta);
 				validado= tar == rs.getLong("nro_tarjeta");	
 				if (validado) this.tarjeta=tarjeta;
 		}
-			}catch(NumberFormatException||NullPointerException e){}
+			} catch(NumberFormatException|NullPointerException e){}
 		finally{
 			rs.close();
 			return validado;
@@ -129,7 +129,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
  		 */
 		 
 		 char comillas= '"';
-		 java.sql.ResultSet rs=consulta("SELECT * FROM "
+		 java.sql.ResultSet rs=consulta("SELECT * FROM " +
 										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
 										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
 										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
@@ -145,7 +145,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
-		for(int i=0,i<cantidad&&rs.next(),i++){
+		for(int i=0;i<cantidad&&rs.next();i++){
 		TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
 		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
 		fila1.setTransaccionTipo(rs.getString("tipo"));
@@ -183,10 +183,10 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		+------------+----------+---------------+---------+----------+---------+
  		 */
 		java.sql.ResultSet rsaux= consulta("SELECT CURDATE()");
-		Date ahora= convertirStringADate(rsaux.getString("CURDATE()"))
-		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw Exception("Fecha Invalida");
+		Date ahora= Fechas.convertirStringADate(rsaux.getString("CURDATE()"));
+		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw new Exception("Fecha Invalida");
 		char comillas= '"';
-		java.sql.ResultSet rs=consulta("SELECT * FROM "
+		java.sql.ResultSet rs=consulta("SELECT * FROM "+
 										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
 										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
 										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
@@ -198,7 +198,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
 										"SELECT fecha, "+comillas+"deposito"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
 										"FROM (Tarjeta NATURAL JOIN Caja_Ahorro NATURAL JOIN Deposito NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" ) WHERE fecha > "+convertirDateADateSQL(desde)+" AND fecha < "+ convertirDateADateSQL(hasta) +
+										"WHERE nro_tarjeta= "+this.tarjeta+" ) WHERE fecha > "+Fechas.convertirDateADateSQL(desde)+" AND fecha < "+ Fechas.convertirDateADateSQL(hasta) +
 										" GROUP BY fecha;");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");

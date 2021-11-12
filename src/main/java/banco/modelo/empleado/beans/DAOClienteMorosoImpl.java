@@ -43,13 +43,13 @@ public class DAOClienteMorosoImpl implements DAOClienteMoroso {
 		String query="SELECT nro_prestamo, COUNT(fecha_venc) FROM Prestamo NATURAL JOIN Pago WHERE fecha_pago IS NULL AND fecha_venc < CURDATE() GROUP BY nro_prestamo HAVING COUNT(fecha_venc) > 1;";
 		java.sql.ResultSet rs = st.executeQuery(query);
 		
-		while(st.next()){
+		while(rs.next()){
 		ClienteMorosoBean moroso = new ClienteMorosoBeanImpl();
-		prestamo = daoPrestamo.recuperarPrestamo(st.getInt("nro_prestamo")); // El prestamo 1 tiene cuotas atrasadas - valor que deberá ser obtenido por la SQL
+		prestamo = daoPrestamo.recuperarPrestamo(rs.getInt("nro_prestamo")); // El prestamo 1 tiene cuotas atrasadas - valor que deberá ser obtenido por la SQL
 		cliente = daoCliente.recuperarCliente(prestamo.getNroCliente());
-		moroso1.setCliente(cliente);
-		moroso1.setPrestamo(prestamo);
-		moroso1.setCantidadCuotasAtrasadas(st.getInt("COUNT(fecha_venc)"));  //valor que deberá ser obtenido por la SQL
+		moroso.setCliente(cliente);
+		moroso.setPrestamo(prestamo);
+		moroso.setCantidadCuotasAtrasadas(rs.getInt("COUNT(fecha_venc)"));  //valor que deberá ser obtenido por la SQL
 		morosos.add(moroso);
 		}
 		
