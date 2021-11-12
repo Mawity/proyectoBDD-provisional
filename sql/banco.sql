@@ -160,7 +160,7 @@ CREATE TABLE Prestamo (
 
 CREATE TABLE Pago (
 	nro_prestamo INT UNSIGNED NOT NULL,
-	nro_pago SMALLINT UNSIGNED NOT NULL,
+	nro_pago SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	fecha_venc DATE NOT NULL,
 	fecha_pago DATE,
 
@@ -402,6 +402,120 @@ CREATE TABLE Transferencia (
 		ON DELETE RESTRICT ON UPDATE CASCADE
 
 ) ENGINE=InnoDB;
+
+
+
+#-------------------------------------------------------------------------
+# Creación de procedimientos
+#-------------------------------------------------------------------------
+
+
+
+delimiter !
+CREATE PROCEDURE realizar_extraccion(IN clienteIN INT, IN monto DECIMAL(16,2), OUT resultado STRING)
+BEGIN
+
+	DECLARE saldo_actual_cuentaIN DECIMAL(16,2);
+	DECLARE cuentaIN INT;
+
+
+	DECLARE codigo_SQL  CHAR(5) DEFAULT '00000';	 
+	DECLARE codigo_MYSQL INT DEFAULT 0;
+	DECLARE mensaje_error TEXT;
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 	 	 
+  	BEGIN
+		GET DIAGNOSTICS CONDITION 1  codigo_MYSQL= MYSQL_ERRNO, codigo_SQL= RETURNED_SQLSTATE, mensaje_error= MESSAGE_TEXT;
+	    SELECT 'SQLEXCEPTION!, transacción abortada' AS resultado, codigo_MySQL, codigo_SQL,  mensaje_error;		
+    	ROLLBACK;
+	END;	
+
+	START TRANSACTION
+
+	IF EXISTS(SELECT * FROM Cliente_CA WHERE nro_cliente=clienteIN)
+	THEN
+
+		SELECT nro_ca INTO cuentaIN FROM Cliente_CA WHERE nro_cliente=clienteIN LOCK IN SHARE MODE;
+		SELECT saldo INTO saldo_actual_cuentaIN FROM Caja_Ahorro WHERE nro_ca=cuentaIN FOR UPDATE;
+
+		IF saldo_actual_cuentaIN >= monto THEN
+			UPDATE Caja_Ahorro SET saldo = saldo - monto  WHERE nro_ca=cuentaIN;
+			SET resultado = "Extraccion realizada con exito";
+	    ELSE
+	    	SET resultado = "Saldo insuficiente";
+	    END IF;
+	ELSE
+		SET resultado = "Cliente inexistente o no tiene caja de ahorro"
+	END IF;
+		
+	COMMIT;
+END; !
+delimiter ;
+
+
+
+delimiter !
+CREATE PROCEDURE realizar_transferencia(IN clienteIN INT, IN nro_ca_destino INT, IN monto DECIMAL(16,2), OUT resultado STRING)
+BEGIN
+
+		DECLARE saldo_actual_cuentaIN DECIMAL(16,2);
+		DECLARE cuentaIN INT;
+
+
+		DECLARE codigo_SQL  CHAR(5) DEFAULT '00000';	 
+		DECLARE codigo_MYSQL INT DEFAULT 0;
+		DECLARE mensaje_error TEXT;
+
+    	DECLARE EXIT HANDLER FOR SQLEXCEPTION 	 	 
+	  	BEGIN
+			GET DIAGNOSTICS CONDITION 1  codigo_MYSQL= MYSQL_ERRNO, codigo_SQL= RETURNED_SQLSTATE, mensaje_error= MESSAGE_TEXT;
+		    SELECT 'SQLEXCEPTION!, transacción abortada' AS resultado, codigo_MySQL, codigo_SQL,  mensaje_error;		
+        	ROLLBACK;
+		END;	
+
+	START TRANSACTION
+		IF EXISTS(SELECT * FROM Cliente_CA WHERE nro_cliente=clienteIN) AND
+			EXISTS(SELECT * FROM Caja_Ahorro WHERE nro_ca=nro_ca_destino)
+		THEN
+			SELECT nro_ca INTO cuentaIN FROM Cliente_CA WHERE nro_cliente=clienteIN LOCK IN SHARE MODE;
+			SELECT saldo INTO saldo_actual_cuentaIN FROM Caja_Ahorro WHERE nro_ca=cuentaIN FOR UPDATE;
+
+			IF saldo_actual_cuentaIN >= monto THEN
+		        UPDATE Caja_Ahorro SET saldo = saldo - monto  WHERE nro_ca=cuentaIN;
+	    	    UPDATE cuentas SET saldo = saldo + monto  WHERE numero=nro_ca_destino;
+	    	    SET resultado = "Transferencia realizada con exito";
+	    	ELSE
+	    		SET resultado = "Saldo insuficiente";
+	    	END IF;
+
+	    ELSE
+	    	SET resultado = "Cliente o cuenta inexistente";
+	    END IF;		
+	COMMIT;
+END; !
+delimiter ;
+
+
+
+#-------------------------------------------------------------------------
+# Creación de triggers
+#-------------------------------------------------------------------------
+
+
+
+delimiter !
+CREATE TRIGGER cargar_pagos AFTER INSERT ON Prestamo FOR EACH ROW
+BEGIN
+	DECLARE @cnt INT = 0;
+	WHILE @cnt < NEW.cant_meses
+	BEGIN
+   		INSERT INTO Pago(nro_prestamo, nro_pago, fecha_venc, fecha_pago) 
+   		VALUES(NEW.nro_prestamo, NULL, date_add(NEW.fecha, interval @cnt+1 month), NULL);
+   		
+   		SET @cnt = @cnt + 1;
+	END;
+END; !
+delimiter;
 
 
 
