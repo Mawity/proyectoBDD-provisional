@@ -78,14 +78,20 @@ public class DAOPagoImpl implements DAOPago {
 		}
 		rs.close();
 		st.close();
-
+		try {
+		this.conexion.setAutoCommit(false);
 		String query2="UPDATE Pago set fecha_pago=CURRDATE() WHERE nro_pago=? ;";
 		java.sql.PreparedStatement st2= this.conexion.prepareStatement(query2);
-
 		for(Integer i:noPagas) {
 			st2.setInt(1, i);
 			st2.executeUpdate();
 		}
 		st2.close();
+		this.conexion.commit();
+		}
+		catch(SQLException e) {
+			conexion.rollback();
+			throw e;
+		}
 	}
 }

@@ -27,6 +27,8 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 		
 		
 		logger.info("Creación o actualizacion del prestamo.");
+		try {
+		this.conexion.setAutoCommit(false);
 		String insert="INSERT INTO Prestamo (nro_prestamo, fecha, cant_meses, monto, tasa_interes, interes, valor_cuota, legajo, nro_cliente) VALUES (?, ?, ?,? ,?, ?, ?, ?, ?);";
 		java.sql.PreparedStatement st = this.conexion.prepareStatement(insert);
 		st.setInt(1,prestamo.getNroPrestamo());
@@ -47,6 +49,12 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 		st.setInt(9,prestamo.getNroCliente());
 		st.executeUpdate();
 		st.close();
+		this.conexion.commit();
+		} 
+		catch(SQLException e) {
+			this.conexion.rollback();
+			throw e;
+		}
 		/**
 		 * TODO Crear o actualizar el Prestamo segun el PrestamoBean prestamo. 
 		 *      Si prestamo tiene nroPrestamo es una actualizacion, si el nroPrestamo es null entonces es un nuevo prestamo.
