@@ -106,7 +106,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup] y la cantidadMeses.
 		 */
 		
-		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE periodo= "+cantidadMeses+" AND monto_inf < "+Double.toString(monto)+" AND monto_sup > "+Double.toString(monto)+" ;");
+		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE periodo= "+cantidadMeses+" AND monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango y la cantidad de meses");
 		double tasa = Parsing.parseMonto(rs.getString("tasa"));
@@ -142,7 +142,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Deberia propagar una excepción si hay algún error de conexión o 
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup].
 		 */
-		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE monto_inf < "+Double.toString(monto)+" AND monto_sup > "+Double.toString(monto)+" ;");
+		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango");
 		ArrayList<Integer> cantMeses = new ArrayList<Integer>();

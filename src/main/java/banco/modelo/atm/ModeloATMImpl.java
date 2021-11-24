@@ -62,20 +62,27 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 *      y si hubo algún otro error deberá producir una excepción.
 		 */
 		boolean validado=false;
+		if(tarjeta!=null&&pin!=null) {
 		char comillas= '"';
-		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5(" +comillas + pin + comillas +");");
-		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
-		try {
+		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5(" +comillas + pin + comillas +");"); 
+		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
+		
 		if(rs.next()!=false){
+			try {
 				long tar= Long.parseLong(tarjeta);
 				validado= tar == rs.getLong("nro_tarjeta");	
 				if (validado) this.tarjeta=tarjeta;
+			} 
+			catch(NumberFormatException e){
+				rs.close(); 
+				return false; // La consigna aclara que en caso de un error de validación del numero de tarjeta, no de SQL, hay que retornar falso en vez de propagar la excepción
+			}
 		}
-			} catch(NumberFormatException|NullPointerException e){}
-		finally{
+			
 			rs.close();
-			return validado;
 		}
+			return validado;
+
 
 	}
 	
@@ -93,7 +100,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 * TODO Obtiene el saldo.
 		 *      Debe capturar la excepción SQLException y propagar una Exception más amigable.
 		 */
-		java.sql.ResultSet rs=consulta("SELECT saldo FROM Tarjeta NATURAL JOIN Caja_Ahorro WHERE nro_tarjeta= "+this.tarjeta+" ;");
+		java.sql.ResultSet rs=consulta("SELECT saldo FROM Tarjeta NATURAL JOIN Caja_Ahorro WHERE nro_tarjeta= "+this.tarjeta+" ;"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		Double saldo = parseMonto(rs.getString("saldo"));
 		return saldo;
@@ -128,20 +135,8 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		+------------+----------+---------------+---------+----------+---------+
  		 */
 		 
-		 char comillas= '"';
-		 java.sql.ResultSet rs=consulta("SELECT * FROM " +
-										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
-										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
-										"SELECT fecha, "+comillas+"extraccion"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
-										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Extraccion NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
-										"SELECT fecha, "+comillas+"debito"+comillas+" AS tipo, monto, NULL AS cod_caja, NULL AS destino"+
-										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Debito NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
-										"SELECT fecha, "+comillas+"deposito"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
-										"FROM (Tarjeta NATURAL JOIN Caja_Ahorro NATURAL JOIN Deposito NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" ) GROUP BY fecha;");
+		 java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
+										"WHERE nro_tarjeta="+this.tarjeta+" GROUP BY fecha;");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
@@ -185,21 +180,8 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		java.sql.ResultSet rsaux= consulta("SELECT CURDATE()");
 		Date ahora= Fechas.convertirStringADate(rsaux.getString("CURDATE()"));
 		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw new Exception("Fecha Invalida");
-		char comillas= '"';
-		java.sql.ResultSet rs=consulta("SELECT * FROM "+
-										"(SELECT fecha, "+comillas+"transferencia"+comillas+" AS tipo, monto, cod_caja, destino"+
-										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Transferencia NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
-										"SELECT fecha, "+comillas+"extraccion"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
-										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Extraccion NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
-										"SELECT fecha, "+comillas+"debito"+comillas+" AS tipo, monto, NULL AS cod_caja, NULL AS destino"+
-										"FROM (Tarjeta NATURAL JOIN Cliente NATURAL JOIN Debito NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" UNION " +
-										"SELECT fecha, "+comillas+"deposito"+comillas+" AS tipo, monto, cod_caja, NULL AS destino"+
-										"FROM (Tarjeta NATURAL JOIN Caja_Ahorro NATURAL JOIN Deposito NATURAL JOIN Transaccion)" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" ) WHERE fecha > "+Fechas.convertirDateADateSQL(desde)+" AND fecha < "+ Fechas.convertirDateADateSQL(hasta) +
-										" GROUP BY fecha;");
+		java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
+										"WHERE nro_tarjeta= "+this.tarjeta+" AND fecha > "+Fechas.convertirDateADateSQL(desde)+" AND fecha < "+ Fechas.convertirDateADateSQL(hasta) + " GROUP BY fecha;");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();

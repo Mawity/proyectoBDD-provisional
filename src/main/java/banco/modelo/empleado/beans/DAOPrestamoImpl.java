@@ -76,12 +76,8 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 		PrestamoBean prestamo = null;
 		
 		java.sql.Statement st = this.conexion.createStatement();
-		String query="SELECT * FROM Prestamo;";
+		String query="SELECT * FROM Prestamo WHERE nro_prestamo= "+nroPrestamo+";";
 		java.sql.ResultSet rs = st.executeQuery(query);
-		boolean encontrado=false;
-		while(rs.next() && !encontrado){
-		encontrado= (nroPrestamo == rs.getInt("nro_prestamo"));
-		if(encontrado){
 		prestamo = new PrestamoBeanImpl();
 		prestamo.setNroPrestamo(nroPrestamo);
 		prestamo.setFecha(Fechas.convertirStringADate(rs.getString("fecha")));
@@ -92,9 +88,6 @@ public class DAOPrestamoImpl implements DAOPrestamo {
 		prestamo.setValorCuota(rs.getDouble("valor_cuota"));
 		prestamo.setLegajo(rs.getInt("legajo"));
 		prestamo.setNroCliente(rs.getInt("nro_cliente"));
-		}
-		}
-		
 		rs.close();
 		st.close();
 		return prestamo;
