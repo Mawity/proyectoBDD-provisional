@@ -67,7 +67,25 @@ public class DAOPagoImpl implements DAOPago {
 		 * nroPrestamo asume que está validado
 		 * cuotasAPagar Debe verificar que las cuotas a pagar no estén pagas (fecha_pago = NULL)
 		 * @throws Exception Si hubo error en la conexión
-		 */		
+		 */	
+		ArrayList<Integer> noPagas= new ArrayList<Integer>();
+		java.sql.Statement st = this.conexion.createStatement();
+		String query="SELECT nro_pago FROM Pago NATURAL JOIN CLIENTE WHERE nro_prestamo= " +nroPrestamo +" AND nro_cliente="+ nroCliente +" AND fecha_pago = NULL ;";
+		java.sql.ResultSet rs = st.executeQuery(query);
+		while(rs.next()) {
+			if(cuotasAPagar.contains(rs.getInt("nro_pago")))
+				noPagas.add(rs.getInt("nro_pago"));
+		}
+		rs.close();
+		st.close();
 
+		String query2="UPDATE Pago set fecha_pago=CURRDATE() WHERE nro_pago=? ;";
+		java.sql.PreparedStatement st2= this.conexion.prepareStatement(query2);
+
+		for(Integer i:noPagas) {
+			st2.setInt(1, i);
+			st2.executeUpdate();
+		}
+		st2.close();
 	}
 }

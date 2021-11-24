@@ -51,20 +51,25 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      deberá retornar falso y si hubo algún otro error deberá producir una excepción.
 		 */
 		boolean validado=false;
+		if(legajo!=null&&password!=null) {
 		char comillas= '"';
 		java.sql.ResultSet rs=consulta("SELECT legajo FROM Empleado WHERE password= md5(" +comillas + password + comillas +");");
-		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
-		try{
+		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(rs.next()!=false){
+				
+				try {
 				int leg= Integer.parseInt(legajo);
 				validado= leg == rs.getInt("legajo");	
 				if (validado) this.legajo=leg;
+				} catch(NumberFormatException e) 
+					{
+						rs.close();
+					 	return false; // La consigna aclara que en caso de un error de validación del legajo, no de SQL, hay que retornar falso en vez de propagar la excepción
+					}
+				rs.close();	
 		}
-			}catch(NumberFormatException|NullPointerException e){}
-		finally{
-			rs.close();
+		}
 			return validado;
-		}
 	}
 	
 	@Override
@@ -87,7 +92,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Deberia propagar una excepción si hay algún error en la consulta.
 		 */
 		java.sql.ResultSet rs= consulta("(SELECT DISTINCT tipo_doc FROM Cliente) UNION (SELECT DISTINCT tipo_doc FROM Empleado);");
-		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		ArrayList<String> tipos = new ArrayList<String>();
 		while(rs.next()){
 		tipos.add(rs.getString("tipo_doc"));
@@ -107,7 +112,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 */
 		
 		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE periodo= "+cantidadMeses+" AND monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;");
-		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango y la cantidad de meses");
 		double tasa = Parsing.parseMonto(rs.getString("tasa"));
    		return tasa;
@@ -142,8 +147,8 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Deberia propagar una excepción si hay algún error de conexión o 
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup].
 		 */
-		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;");
-		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;"); 
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango");
 		ArrayList<Integer> cantMeses = new ArrayList<Integer>();
 		do{
@@ -163,15 +168,13 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      si no existe prestamo del cliente o todos están pagos retorna null.
 		 *      Si hay una excepción la propaga con un mensaje apropiado.
 		 */
-		
+		String query="SELECT nro_prestamo, FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE nro_cliente= "+nroCliente+" AND fecha_pago IS NULL AND fecha_venc < CURDATE() GROUP BY nro_prestamo HAVING COUNT(fecha_venc) >= 1;";
+		java.sql.ResultSet rs = consulta(query);
+		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		Integer pres=null;
-		ArrayList<ClienteMorosoBean> morosos= recuperarClientesMorosos();
-		Iterator<ClienteMorosoBean> cm= morosos.iterator();
-		while(cm.hasNext()&&(pres==null)){
-			ClienteMorosoBean cliente=cm.next();
-			if(cliente.getCliente().getNroCliente()==nroCliente) pres=cliente.getPrestamo().getNroPrestamo();
+		while(rs.next()&&pres==null) {
+			pres=rs.getInt("nro_prestamo");
 		}
-		
 		return pres;
 	
 	}
