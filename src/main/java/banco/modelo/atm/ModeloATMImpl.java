@@ -100,7 +100,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 * TODO Obtiene el saldo.
 		 *      Debe capturar la excepción SQLException y propagar una Exception más amigable.
 		 */
-		java.sql.ResultSet rs=consulta("SELECT saldo FROM Tarjeta NATURAL JOIN Caja_Ahorro WHERE nro_tarjeta= "+this.tarjeta+" ;"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
+		java.sql.ResultSet rs=consulta("SELECT saldo FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca WHERE nro_tarjeta= "+this.tarjeta+" ;"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		Double saldo = parseMonto(rs.getString("saldo"));
 		return saldo;
@@ -207,14 +207,25 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 * 		Debe capturar la excepción SQLException y propagar una Exception más amigable. 
 		 * 		Debe generar excepción si las propiedades codigoATM o tarjeta no tienen valores
 		 */		
+		if (this.tarjeta == null || this.codigoATM==null ) {
+			throw new Exception("El cliente no ingresó la tarjeta");
+		}
+		
 		
 		String resultado = ModeloATM.EXTRACCION_EXITOSA;
-		
+		java.sql.ResultSet r1= consulta("SELECT nro_cliente FROM Tarjeta WHERE nro_tarjeta= "+this.tarjeta+" ;");
+		if(r1==null) resultado= "Error de SQL para obtener el clinete relacionado a la tarjeta";
+		else {
+		java.sql.Statement st= this.conexion.createStatement();
+		String call ="call realizar_extraccion("+r1.getInt("nro_cliente")+", +"+monto+")";
+		st.execute(call);
+		java.sql.ResultSet r2 = st.getResultSet();
+		resultado= r2.getString("resultado");
+		}
 		if (!resultado.equals(ModeloATM.EXTRACCION_EXITOSA)) {
 			throw new Exception(resultado);
 		}
 		return this.obtenerSaldo();
-
 	}
 
 	
@@ -252,10 +263,20 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 * 		Debe capturar la excepción SQLException y propagar una Exception más amigable. 
 		 * 		Debe generar excepción si las propiedades codigoATM o tarjeta no tienen valores
 		 */		
+		if (this.tarjeta == null || this.codigoATM==null ) {
+			throw new Exception("El cliente no ingresó la tarjeta");
+		}
 		
-
 		String resultado = ModeloATM.TRANSFERENCIA_EXITOSA;
-		
+		java.sql.ResultSet r1= consulta("SELECT nro_cliente FROM Tarjeta WHERE nro_tarjeta= "+this.tarjeta+" ;");
+		if(r1==null) resultado= "Error de SQL para obtener el clinete relacionado a la tarjeta";
+		else {
+		java.sql.Statement st= this.conexion.createStatement();
+		String call ="call realizar_transferencia("+r1.getInt("nro_cliente")+", "+cajaDestino+", +"+monto+")";
+		st.execute(call);
+		java.sql.ResultSet r2 = st.getResultSet();
+		resultado= r2.getString("resultado");
+		}
 		if (!resultado.equals(ModeloATM.TRANSFERENCIA_EXITOSA)) {
 			throw new Exception(resultado);
 		}
