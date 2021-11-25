@@ -64,7 +64,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 				} catch(NumberFormatException e) 
 					{
 						rs.close();
-					 	return false; // La consigna aclara que en caso de un error de validación del legajo, no de SQL, hay que retornar falso en vez de propagar la excepción
+					 	throw new Exception("Error en el parsing del legajo");
 					}
 				rs.close();	
 		}

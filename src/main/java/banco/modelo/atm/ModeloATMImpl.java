@@ -65,7 +65,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		if(tarjeta!=null&&pin!=null) {
 		char comillas= '"';
 		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5(" +comillas + pin + comillas +");"); 
-		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
+		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); 
 		
 		if(rs.next()!=false){
 			try {
@@ -75,7 +75,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 			} 
 			catch(NumberFormatException e){
 				rs.close(); 
-				return false; // La consigna aclara que en caso de un error de validación del numero de tarjeta, no de SQL, hay que retornar falso en vez de propagar la excepción
+				throw new Exception("Error en el parsing del número de tarjeta");
 			}
 		}
 			

@@ -70,7 +70,7 @@ public class DAOPagoImpl implements DAOPago {
 		 */	
 		ArrayList<Integer> noPagas= new ArrayList<Integer>();
 		java.sql.Statement st = this.conexion.createStatement();
-		String query="SELECT nro_pago FROM Pago NATURAL JOIN CLIENTE WHERE nro_prestamo= " +nroPrestamo +" AND nro_cliente="+ nroCliente +" AND fecha_pago = NULL ;";
+		String query="SELECT nro_pago FROM Pago NATURAL JOIN Cliente WHERE nro_prestamo= " +nroPrestamo +" AND nro_cliente="+ nroCliente +" AND fecha_pago = NULL ;";
 		java.sql.ResultSet rs = st.executeQuery(query);
 		while(rs.next()) {
 			if(cuotasAPagar.contains(rs.getInt("nro_pago")))
@@ -90,7 +90,7 @@ public class DAOPagoImpl implements DAOPago {
 		this.conexion.commit();
 		}
 		catch(SQLException e) {
-			conexion.rollback();
+			this.conexion.rollback();
 			throw e;
 		}
 	}

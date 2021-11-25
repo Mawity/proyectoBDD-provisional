@@ -34,7 +34,7 @@ public class DAOEmpleadoImpl implements DAOEmpleado {
 		
 		empleado = new EmpleadoBeanImpl();
 		java.sql.Statement st = this.conexion.createStatement();
-		String query="SELECT apellido, nombre, tipo_doc, nro_doc, direccion, telefono, cargo, password, nro_sucursal FROM Empleado WHERE legajo= "+legajo+";";
+		String query="SELECT apellido, nombre, tipo_doc, nro_doc, direccion, telefono, cargo, password, nro_suc FROM Empleado WHERE legajo= "+legajo+";";
 		java.sql.ResultSet rs = st.executeQuery(query);
 		empleado.setLegajo(legajo);
 		empleado.setApellido(rs.getString("apellido"));
@@ -45,7 +45,7 @@ public class DAOEmpleadoImpl implements DAOEmpleado {
 		empleado.setTelefono(rs.getString("telefono"));
 		empleado.setCargo(rs.getString("cargo"));
 		empleado.setPassword(rs.getString("password")); // select md5(9);
-		empleado.setNroSucursal(rs.getInt("nro_sucursal"));
+		empleado.setNroSucursal(rs.getInt("nro_suc"));
 		
 		rs.close();
 		st.close();
