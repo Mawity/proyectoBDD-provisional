@@ -137,11 +137,11 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
  		 */
 		 
 		 java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
-										"WHERE nro_tarjeta="+this.tarjeta+" GROUP BY fecha;");
+										"WHERE nro_tarjeta="+this.tarjeta+" GROUP BY fecha LIMIT"+cantidad+";");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
-		for(int i=0;i<cantidad&&rs.next();i++){
+		while(rs.next()){
 		TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
 		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
 		fila1.setTransaccionTipo(rs.getString("tipo"));
