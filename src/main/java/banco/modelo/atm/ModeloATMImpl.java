@@ -136,7 +136,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		+------------+----------+---------------+---------+----------+---------+
  		 */
 		 
-		 java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
+		 java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca " +
 										"WHERE nro_tarjeta="+this.tarjeta+" ORDER BY fecha DESC LIMIT "+cantidad+";");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
@@ -178,24 +178,30 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		| 2021-09-12 | 15:00:00 | transferencia | -400.00 |       41 |       7 |
 		+------------+----------+---------------+---------+----------+---------+
  		 */
-		java.sql.ResultSet rsaux= consulta("SELECT CURDATE()");
-		Date ahora= Fechas.convertirStringADate(rsaux.getString("CURDATE()"));
-		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw new Exception("Fecha Invalida");
-		java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" AND fecha > "+Fechas.convertirDateADateSQL(desde)+" AND fecha < "+ Fechas.convertirDateADateSQL(hasta) + " ORDER BY fecha DESC;");
-		
+		if(desde==null||hasta==null||desde.after(hasta)) throw new Exception("Fecha Invalida1");
+		java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca " +
+										"WHERE nro_tarjeta= "+this.tarjeta+" AND CURDATE() > '"+Fechas.convertirDateADateSQL(hasta)+"' AND fecha > '"+Fechas.convertirDateADateSQL(desde)+"' AND fecha < '"+ Fechas.convertirDateADateSQL(hasta) + "' ORDER BY fecha DESC;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
-		while(rs.next()){
-		TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
-		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
-		fila1.setTransaccionTipo(rs.getString("tipo"));
-		fila1.setTransaccionMonto(parseMonto(rs.getString("monto")));
-		fila1.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
-		fila1.setCajaAhorroDestinoNumero(rs.getInt("destino"));
-		lista.add(fila1);
+		if(!rs.next()) throw new Exception("Fecha Invalida2");
+		else {
+			TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
+			fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+			fila1.setTransaccionTipo(rs.getString("tipo"));
+			fila1.setTransaccionMonto(parseMonto(rs.getString("monto")));
+			fila1.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
+			fila1.setCajaAhorroDestinoNumero(rs.getInt("destino"));
+			lista.add(fila1);
+			while(rs.next()){
+					TransaccionCajaAhorroBean filan = new TransaccionCajaAhorroBeanImpl();
+					filan.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+					filan.setTransaccionTipo(rs.getString("tipo"));
+					filan.setTransaccionMonto(parseMonto(rs.getString("monto")));
+					filan.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
+					filan.setCajaAhorroDestinoNumero(rs.getInt("destino"));
+					lista.add(filan);
 		}
-		
+		}
 		return lista;
 	}
 	

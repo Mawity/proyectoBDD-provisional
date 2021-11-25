@@ -40,7 +40,7 @@ public class DAOClienteMorosoImpl implements DAOClienteMoroso {
 		ClienteBean cliente = null;
 		
 		java.sql.Statement st = this.conexion.createStatement();
-		String query="SELECT nro_clinete, tipo_doc, nro_doc, nombre, apellido, direccion, telefono, fecha_nac, nro_prestamo, monto, cant_meses, valor_cuota, tasa_interes, interes, legajo, fecha, COUNT(fecha_venc) AS cant_cuotas_atrasadas FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE fecha_pago IS NULL AND fecha_venc < CURDATE() GROUP BY nro_prestamo HAVING COUNT(fecha_venc) > 1;";
+		String query="SELECT nro_cliente, tipo_doc, nro_doc, nombre, apellido, direccion, telefono, fecha_nac, nro_prestamo, monto, cant_meses, valor_cuota, tasa_interes, interes, legajo, fecha, COUNT(fecha_venc) AS cant_cuotas_atrasadas FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE fecha_pago IS NULL AND fecha_venc < CURDATE() GROUP BY nro_prestamo HAVING COUNT(fecha_venc) > 1;";
 		java.sql.ResultSet rs = st.executeQuery(query);
 		
 		while(rs.next()){

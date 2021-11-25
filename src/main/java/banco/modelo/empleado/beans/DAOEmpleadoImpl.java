@@ -36,6 +36,7 @@ public class DAOEmpleadoImpl implements DAOEmpleado {
 		java.sql.Statement st = this.conexion.createStatement();
 		String query="SELECT apellido, nombre, tipo_doc, nro_doc, direccion, telefono, cargo, password, nro_suc FROM Empleado WHERE legajo= "+legajo+";";
 		java.sql.ResultSet rs = st.executeQuery(query);
+		rs.next();
 		empleado.setLegajo(legajo);
 		empleado.setApellido(rs.getString("apellido"));
 		empleado.setNombre(rs.getString("nombre"));

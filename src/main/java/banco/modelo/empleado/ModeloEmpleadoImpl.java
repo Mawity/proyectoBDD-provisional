@@ -52,8 +52,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 */
 		boolean validado=false;
 		if(legajo!=null&&password!=null) {
-		char comillas= '"';
-		java.sql.ResultSet rs=consulta("SELECT legajo FROM Empleado WHERE password= md5(" +comillas + password + comillas +");");
+		java.sql.ResultSet rs=consulta("SELECT legajo FROM Empleado WHERE password= md5('" + password + "');");
 		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(rs.next()!=false){
 				
@@ -111,7 +110,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup] y la cantidadMeses.
 		 */
 		
-		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE periodo= "+cantidadMeses+" AND monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;");
+		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Prestamo WHERE periodo= "+cantidadMeses+" AND monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango y la cantidad de meses");
 		double tasa = Parsing.parseMonto(rs.getString("tasa"));
@@ -147,7 +146,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      Deberia propagar una excepción si hay algún error de conexión o 
 		 *      no encuentra el monto dentro del [monto_inf,monto_sup].
 		 */
-		java.sql.ResultSet rs= consulta("SELECT tasa FROM Tasa_Plazo_Fijo WHERE monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;"); 
+		java.sql.ResultSet rs= consulta("SELECT periodo FROM Tasa_Prestamo WHERE monto_inf <= "+Double.toString(monto)+" AND monto_sup >= "+Double.toString(monto)+" ;"); 
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(!rs.next()) throw new Exception("No encuentra el monto dentro del rango");
 		ArrayList<Integer> cantMeses = new ArrayList<Integer>();
@@ -168,7 +167,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      si no existe prestamo del cliente o todos están pagos retorna null.
 		 *      Si hay una excepción la propaga con un mensaje apropiado.
 		 */
-		String query="SELECT nro_prestamo, FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE nro_cliente= "+nroCliente+" AND fecha_pago IS NULL GROUP BY nro_prestamo HAVING COUNT(fecha_venc) >= 1;";
+		String query="SELECT nro_prestamo FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE nro_cliente= "+nroCliente+" AND fecha_pago IS NULL GROUP BY nro_prestamo HAVING COUNT(fecha_venc) >= 1;";
 		java.sql.ResultSet rs = consulta(query);
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		Integer pres=null;

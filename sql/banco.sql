@@ -166,7 +166,7 @@ CREATE TABLE Pago (
 
 
 	CONSTRAINT pk_pago
-	PRIMARY KEY (nro_prestamo, nro_pago),
+	PRIMARY KEY (nro_pago, nro_prestamo),
 
 	CONSTRAINT fk_pago_prestamo
 	FOREIGN KEY (nro_prestamo) REFERENCES Prestamo (nro_prestamo)
@@ -412,7 +412,7 @@ CREATE TABLE Transferencia (
 
 
 delimiter !
-CREATE PROCEDURE realizar_extraccion(IN clienteIN INT, IN monto DECIMAL(16,2), OUT resultado STRING)
+CREATE PROCEDURE realizar_extraccion(IN clienteIN INT, IN monto DECIMAL(16,2))
 BEGIN
 
 	DECLARE saldo_actual_cuentaIN DECIMAL(16,2);
@@ -430,7 +430,7 @@ BEGIN
     	ROLLBACK;
 	END;	
 
-	START TRANSACTION
+	START TRANSACTION;
 
 	IF EXISTS(SELECT * FROM Cliente_CA WHERE nro_cliente=clienteIN)
 	THEN
@@ -440,12 +440,12 @@ BEGIN
 
 		IF saldo_actual_cuentaIN >= monto THEN
 			UPDATE Caja_Ahorro SET saldo = saldo - monto  WHERE nro_ca=cuentaIN;
-			SET resultado = "Extraccion realizada con exito";
+			SELECT 'exito' AS resultado;
 	    ELSE
-	    	SET resultado = "Saldo insuficiente";
+	    	SELECT 'Saldo insuficiente' AS resultado;
 	    END IF;
 	ELSE
-		SET resultado = "Cliente inexistente o no tiene caja de ahorro"
+		SELECT 'cliente inexistente' AS resultado;
 	END IF;
 		
 	COMMIT;
@@ -455,7 +455,7 @@ delimiter ;
 
 
 delimiter !
-CREATE PROCEDURE realizar_transferencia(IN clienteIN INT, IN nro_ca_destino INT, IN monto DECIMAL(16,2), OUT resultado STRING)
+CREATE PROCEDURE realizar_transferencia(IN clienteIN INT, IN nro_ca_destino INT, IN monto DECIMAL(16,2))
 BEGIN
 
 		DECLARE saldo_actual_cuentaIN DECIMAL(16,2);
@@ -473,7 +473,7 @@ BEGIN
         	ROLLBACK;
 		END;	
 
-	START TRANSACTION
+	START TRANSACTION;
 		IF EXISTS(SELECT * FROM Cliente_CA WHERE nro_cliente=clienteIN) AND
 			EXISTS(SELECT * FROM Caja_Ahorro WHERE nro_ca=nro_ca_destino)
 		THEN
@@ -483,13 +483,12 @@ BEGIN
 			IF saldo_actual_cuentaIN >= monto THEN
 		        UPDATE Caja_Ahorro SET saldo = saldo - monto  WHERE nro_ca=cuentaIN;
 	    	    UPDATE cuentas SET saldo = saldo + monto  WHERE numero=nro_ca_destino;
-	    	    SET resultado = "Transferencia realizada con exito";
-	    	ELSE
-	    		SET resultado = "Saldo insuficiente";
+				SELECT 'exito' AS resultado;	    	ELSE
+	    		SELECT 'Saldo insuficiente' AS resultado;
 	    	END IF;
 
 	    ELSE
-	    	SET resultado = "Cliente o cuenta inexistente";
+			SELECT 'cliente inexistente' AS resultado;
 	    END IF;		
 	COMMIT;
 END; !
@@ -502,21 +501,18 @@ delimiter ;
 #-------------------------------------------------------------------------
 
 
-
 delimiter !
 CREATE TRIGGER cargar_pagos AFTER INSERT ON Prestamo FOR EACH ROW
 BEGIN
-	DECLARE @cnt INT = 0;
-	WHILE @cnt < NEW.cant_meses
-	BEGIN
+	DECLARE cnt INT DEFAULT 1;
+	WHILE cnt <= NEW.cant_meses DO	
    		INSERT INTO Pago(nro_prestamo, nro_pago, fecha_venc, fecha_pago) 
-   		VALUES(NEW.nro_prestamo, NULL, date_add(NEW.fecha, interval @cnt+1 month), NULL);
+   		VALUES(NEW.nro_prestamo, cnt, date_add(NEW.fecha, interval cnt month), NULL);
    		
-   		SET @cnt = @cnt + 1;
-	END;
+   		SET cnt = cnt + 1;
+	END WHILE;
 END; !
-delimiter;
-
+delimiter ;
 
 
 #-------------------------------------------------------------------------
