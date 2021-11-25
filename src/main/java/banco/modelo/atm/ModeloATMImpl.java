@@ -102,6 +102,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 */
 		java.sql.ResultSet rs=consulta("SELECT saldo FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca WHERE nro_tarjeta= "+this.tarjeta+" ;"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
+		if(!rs.next()) throw new Exception("La tarjeta no está relacionada con ninguna caja de ahorro");
 		Double saldo = parseMonto(rs.getString("saldo"));
 		return saldo;
 	}	

@@ -168,7 +168,7 @@ public class ModeloEmpleadoImpl extends ModeloImpl implements ModeloEmpleado {
 		 *      si no existe prestamo del cliente o todos están pagos retorna null.
 		 *      Si hay una excepción la propaga con un mensaje apropiado.
 		 */
-		String query="SELECT nro_prestamo, FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE nro_cliente= "+nroCliente+" AND fecha_pago IS NULL AND fecha_venc < CURDATE() GROUP BY nro_prestamo HAVING COUNT(fecha_venc) >= 1;";
+		String query="SELECT nro_prestamo, FROM Cliente NATURAL JOIN Prestamo NATURAL JOIN Pago WHERE nro_cliente= "+nroCliente+" AND fecha_pago IS NULL GROUP BY nro_prestamo HAVING COUNT(fecha_venc) >= 1;";
 		java.sql.ResultSet rs = consulta(query);
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); //No hace falta capturar excepción de SQL porque eso ya lo hacer el método Modelo.consulta()
 		Integer pres=null;
