@@ -137,7 +137,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
  		 */
 		 
 		 java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
-										"WHERE nro_tarjeta="+this.tarjeta+" GROUP BY fecha LIMIT"+cantidad+";");
+										"WHERE nro_tarjeta="+this.tarjeta+" ORDER BY fecha DESC LIMIT "+cantidad+";");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
@@ -182,7 +182,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		Date ahora= Fechas.convertirStringADate(rsaux.getString("CURDATE()"));
 		if(desde==null||hasta==null||desde.after(hasta)||hasta.after(ahora)) throw new Exception("Fecha Invalida");
 		java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca" +
-										"WHERE nro_tarjeta= "+this.tarjeta+" AND fecha > "+Fechas.convertirDateADateSQL(desde)+" AND fecha < "+ Fechas.convertirDateADateSQL(hasta) + " GROUP BY fecha;");
+										"WHERE nro_tarjeta= "+this.tarjeta+" AND fecha > "+Fechas.convertirDateADateSQL(desde)+" AND fecha < "+ Fechas.convertirDateADateSQL(hasta) + " ORDER BY fecha DESC;");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
