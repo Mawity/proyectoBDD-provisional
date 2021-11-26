@@ -160,7 +160,7 @@ CREATE TABLE Prestamo (
 
 CREATE TABLE Pago (
 	nro_prestamo INT UNSIGNED NOT NULL,
-	nro_pago SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	nro_pago SMALLINT UNSIGNED NOT NULL,
 	fecha_venc DATE NOT NULL,
 	fecha_pago DATE,
 
@@ -412,11 +412,12 @@ CREATE TABLE Transferencia (
 
 
 delimiter !
-CREATE PROCEDURE realizar_extraccion(IN clienteIN INT, IN monto DECIMAL(16,2))
+CREATE PROCEDURE realizar_extraccion(IN tarjeta_ingresada BIGINT, IN montoIN DECIMAL(16,2), IN cod_atm INT)
 BEGIN
 
 	DECLARE saldo_actual_cuentaIN DECIMAL(16,2);
-	DECLARE cuentaIN INT;
+	DECLARE cajaIN INT;
+	DECLARE clienteIN INT;
 
 
 	DECLARE codigo_SQL  CHAR(5) DEFAULT '00000';	 
@@ -432,20 +433,30 @@ BEGIN
 
 	START TRANSACTION;
 
-	IF EXISTS(SELECT * FROM Cliente_CA WHERE nro_cliente=clienteIN)
+	IF EXISTS(SELECT * FROM Tarjeta WHERE nro_tarjeta=tarjeta_ingresada)
 	THEN
+		SELECT nro_cliente INTO clienteIN FROM Tarjeta WHERE nro_tarjeta=tarjeta_ingresada LOCK IN SHARE MODE;
+		SELECT nro_ca INTO cajaIN FROM Tarjeta WHERE nro_tarjeta=tarjeta_ingresada LOCK IN SHARE MODE;
+		SELECT saldo INTO saldo_actual_cuentaIN FROM Caja_Ahorro WHERE nro_ca=cajaIN FOR UPDATE;
 
-		SELECT nro_ca INTO cuentaIN FROM Cliente_CA WHERE nro_cliente=clienteIN LOCK IN SHARE MODE;
-		SELECT saldo INTO saldo_actual_cuentaIN FROM Caja_Ahorro WHERE nro_ca=cuentaIN FOR UPDATE;
+		IF saldo_actual_cuentaIN >= montoIN THEN
+			UPDATE Caja_Ahorro SET saldo = saldo - montoIN  WHERE nro_ca=cajaIN;
 
-		IF saldo_actual_cuentaIN >= monto THEN
-			UPDATE Caja_Ahorro SET saldo = saldo - monto  WHERE nro_ca=cuentaIN;
-			SELECT 'exito' AS resultado;
+			INSERT INTO Transaccion(fecha, hora, monto)
+				VALUES(CURDATE(), CURTIME(), montoIN); 
+
+			INSERT INTO Transaccion_por_caja(nro_trans, cod_caja) 
+				VALUES(LAST_INSERT_ID(), cod_atm); 
+
+			INSERT INTO Extraccion(nro_trans, nro_cliente, nro_ca)
+				VALUES(LAST_INSERT_ID(), clienteIN , cajaIN);
+
+			SELECT 'Extraccion Exitosa' AS resultado;
 	    ELSE
 	    	SELECT 'Saldo insuficiente' AS resultado;
 	    END IF;
 	ELSE
-		SELECT 'cliente inexistente' AS resultado;
+		SELECT 'Cliente inexistente' AS resultado;
 	END IF;
 		
 	COMMIT;
@@ -455,11 +466,13 @@ delimiter ;
 
 
 delimiter !
-CREATE PROCEDURE realizar_transferencia(IN clienteIN INT, IN nro_ca_destino INT, IN monto DECIMAL(16,2))
+CREATE PROCEDURE realizar_transferencia(IN tarjeta_ingresada BIGINT, IN nro_ca_destino INT, IN montoIN DECIMAL(16,2), IN cod_atm INT)
 BEGIN
 
 		DECLARE saldo_actual_cuentaIN DECIMAL(16,2);
-		DECLARE cuentaIN INT;
+		DECLARE cajaIN INT;
+		DECLARE clienteIN INT;
+
 
 
 		DECLARE codigo_SQL  CHAR(5) DEFAULT '00000';	 
@@ -474,21 +487,43 @@ BEGIN
 		END;	
 
 	START TRANSACTION;
-		IF EXISTS(SELECT * FROM Cliente_CA WHERE nro_cliente=clienteIN) AND
+
+		IF EXISTS(SELECT * FROM Tarjeta WHERE nro_tarjeta=tarjeta_ingresada) AND
 			EXISTS(SELECT * FROM Caja_Ahorro WHERE nro_ca=nro_ca_destino)
 		THEN
-			SELECT nro_ca INTO cuentaIN FROM Cliente_CA WHERE nro_cliente=clienteIN LOCK IN SHARE MODE;
-			SELECT saldo INTO saldo_actual_cuentaIN FROM Caja_Ahorro WHERE nro_ca=cuentaIN FOR UPDATE;
+			SELECT nro_cliente INTO clienteIN FROM Tarjeta WHERE nro_tarjeta=tarjeta_ingresada LOCK IN SHARE MODE;
+			SELECT nro_ca INTO cajaIN FROM Tarjeta WHERE nro_tarjeta=tarjeta_ingresada LOCK IN SHARE MODE;
+			SELECT saldo INTO saldo_actual_cuentaIN FROM Caja_Ahorro WHERE nro_ca=cajaIN FOR UPDATE;
 
-			IF saldo_actual_cuentaIN >= monto THEN
-		        UPDATE Caja_Ahorro SET saldo = saldo - monto  WHERE nro_ca=cuentaIN;
-	    	    UPDATE cuentas SET saldo = saldo + monto  WHERE numero=nro_ca_destino;
-				SELECT 'exito' AS resultado;	    	ELSE
+			IF saldo_actual_cuentaIN >= montoIN THEN
+		        UPDATE Caja_Ahorro SET saldo = saldo - montoIN  WHERE nro_ca=cajaIN;
+	    	    UPDATE Caja_Ahorro SET saldo = saldo + montoIN  WHERE nro_ca=nro_ca_destino;
+	    	    
+	    	    INSERT INTO Transaccion(fecha, hora, monto) 
+					VALUES(CURDATE(), CURTIME(), montoIN); 
+
+				INSERT INTO Transaccion_por_caja(nro_trans, cod_caja)
+					VALUES(LAST_INSERT_ID(), cod_atm); 
+
+				INSERT INTO Transferencia(nro_trans, nro_cliente, origen, destino)
+					VALUES(LAST_INSERT_ID(), clienteIN, cajaIN, nro_ca_destino);
+				
+
+				INSERT INTO Transaccion(fecha, hora, monto) 
+					VALUES(CURDATE(), CURTIME(), montoIN); 
+
+				INSERT INTO Transaccion_por_caja(nro_trans, cod_caja)
+					VALUES(LAST_INSERT_ID(), cod_atm);  
+
+				INSERT INTO Deposito(nro_trans, nro_ca)
+					VALUES(LAST_INSERT_ID(), nro_ca_destino);
+
+				SELECT 'Transferencia Exitosa' AS resultado;	    	
+			ELSE
 	    		SELECT 'Saldo insuficiente' AS resultado;
 	    	END IF;
-
 	    ELSE
-			SELECT 'cliente inexistente' AS resultado;
+			SELECT 'Cliente inexistente' AS resultado;
 	    END IF;		
 	COMMIT;
 END; !
@@ -593,5 +628,8 @@ CREATE USER 'atm'@'%' IDENTIFIED BY 'atm';
 
 GRANT SELECT, UPDATE ON banco.Tarjeta TO 'atm'@'%';
 
+GRANT SELECT, UPDATE ON banco.Caja_Ahorro TO 'atm'@'%';
+
+GRANT EXECUTE ON banco.* TO 'atm'@'%';
 
 GRANT SELECT ON banco.trans_cajas_ahorro TO 'atm'@'%';

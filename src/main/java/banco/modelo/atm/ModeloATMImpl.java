@@ -63,8 +63,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		 */
 		boolean validado=false;
 		if(tarjeta!=null&&pin!=null) {
-		char comillas= '"';
-		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5(" +comillas + pin + comillas +");"); 
+		java.sql.ResultSet rs=consulta("SELECT nro_tarjeta FROM Tarjeta WHERE pin= md5('"+ pin +"');"); 
 		if (rs==null) throw new Exception("Error del servidor SQL para resolver la consulta"); 
 		
 		if(rs.next()!=false){
@@ -136,14 +135,14 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		+------------+----------+---------------+---------+----------+---------+
  		 */
 		 
-		 java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca " +
-										"WHERE nro_tarjeta="+this.tarjeta+" ORDER BY fecha DESC LIMIT "+cantidad+";");
+		 java.sql.ResultSet rs=consulta("SELECT fecha, hora, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca " +
+										"WHERE nro_tarjeta="+this.tarjeta+" ORDER BY fecha DESC, hora DESC LIMIT "+cantidad+";");
 		
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
 		while(rs.next()){
 		TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
-		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+		fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha"),rs.getString("hora")));
 		fila1.setTransaccionTipo(rs.getString("tipo"));
 		fila1.setTransaccionMonto(parseMonto(rs.getString("monto")));
 		fila1.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
@@ -178,15 +177,15 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		| 2021-09-12 | 15:00:00 | transferencia | -400.00 |       41 |       7 |
 		+------------+----------+---------------+---------+----------+---------+
  		 */
-		if(desde==null||hasta==null||desde.after(hasta)) throw new Exception("Fecha Invalida1");
-		java.sql.ResultSet rs=consulta("SELECT fecha, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca " +
-										"WHERE nro_tarjeta= "+this.tarjeta+" AND CURDATE() > '"+Fechas.convertirDateADateSQL(hasta)+"' AND fecha > '"+Fechas.convertirDateADateSQL(desde)+"' AND fecha < '"+ Fechas.convertirDateADateSQL(hasta) + "' ORDER BY fecha DESC;");
+		if(desde==null||hasta==null||desde.after(hasta)) throw new Exception("Fecha Invalida1: nula o desde después de hasta");
+		java.sql.ResultSet rs=consulta("SELECT fecha, hora, tipo, monto, cod_caja, destino FROM trans_cajas_ahorro JOIN Tarjeta ON trans_cajas_ahorro.nro_ca = Tarjeta.nro_ca " +
+										"WHERE nro_tarjeta= "+this.tarjeta+" AND CURDATE() >= '"+Fechas.convertirDateADateSQL(hasta)+"' AND fecha >= '"+Fechas.convertirDateADateSQL(desde)+"' AND fecha <= '"+ Fechas.convertirDateADateSQL(hasta) + "' ORDER BY fecha DESC, hora DESC;");
 		if(rs==null) throw new Exception("Error del servidor SQL para resolver la consulta");
 		ArrayList<TransaccionCajaAhorroBean> lista = new ArrayList<TransaccionCajaAhorroBean>();
-		if(!rs.next()) throw new Exception("Fecha Invalida2");
+		if(!rs.next()) throw new Exception("Fecha Invalida2: hasta después de fecha actual, o ninguna transaccion en periodo");
 		else {
 			TransaccionCajaAhorroBean fila1 = new TransaccionCajaAhorroBeanImpl();
-			fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+			fila1.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha"),rs.getString("hora")));
 			fila1.setTransaccionTipo(rs.getString("tipo"));
 			fila1.setTransaccionMonto(parseMonto(rs.getString("monto")));
 			fila1.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
@@ -194,7 +193,7 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 			lista.add(fila1);
 			while(rs.next()){
 					TransaccionCajaAhorroBean filan = new TransaccionCajaAhorroBeanImpl();
-					filan.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha")));
+					filan.setTransaccionFechaHora(Fechas.convertirStringADate(rs.getString("fecha"),rs.getString("hora")));
 					filan.setTransaccionTipo(rs.getString("tipo"));
 					filan.setTransaccionMonto(parseMonto(rs.getString("monto")));
 					filan.setTransaccionCodigoCaja(rs.getInt("cod_caja"));
@@ -219,16 +218,14 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 		}
 		
 		
-		String resultado = ModeloATM.EXTRACCION_EXITOSA;
-		java.sql.ResultSet r1= consulta("SELECT nro_cliente FROM Tarjeta WHERE nro_tarjeta= "+this.tarjeta+" ;");
-		if(r1==null) resultado= "Error de SQL para obtener el clinete relacionado a la tarjeta";
-		else {
+		String resultado = "Error: stored procedure no se ejecutó";
 		java.sql.Statement st= this.conexion.createStatement();
-		String call ="call realizar_extraccion("+r1.getInt("nro_cliente")+", +"+monto+")";
+		String call ="call realizar_extraccion("+this.tarjeta+", +"+monto+", "+ this.codigoATM +")";
 		st.execute(call);
 		java.sql.ResultSet r2 = st.getResultSet();
+		if(!r2.next()) throw new Exception("Error del stored procedure, ningún resultado");
 		resultado= r2.getString("resultado");
-		}
+		
 		if (!resultado.equals(ModeloATM.EXTRACCION_EXITOSA)) {
 			throw new Exception(resultado);
 		}
@@ -274,16 +271,13 @@ public class ModeloATMImpl extends ModeloImpl implements ModeloATM {
 			throw new Exception("El cliente no ingresó la tarjeta");
 		}
 		
-		String resultado = ModeloATM.TRANSFERENCIA_EXITOSA;
-		java.sql.ResultSet r1= consulta("SELECT nro_cliente FROM Tarjeta WHERE nro_tarjeta= "+this.tarjeta+" ;");
-		if(r1==null) resultado= "Error de SQL para obtener el clinete relacionado a la tarjeta";
-		else {
+		String resultado = "Error: stored procedure no se ejecutó";
 		java.sql.Statement st= this.conexion.createStatement();
-		String call ="call realizar_transferencia("+r1.getInt("nro_cliente")+", "+cajaDestino+", +"+monto+")";
+		String call ="call realizar_transferencia("+this.tarjeta+", "+cajaDestino+", +"+monto+", "+ this.codigoATM +")";
 		st.execute(call);
 		java.sql.ResultSet r2 = st.getResultSet();
+		if(!r2.next()) throw new Exception("Error del stored procedure, ningún resultado");
 		resultado= r2.getString("resultado");
-		}
 		if (!resultado.equals(ModeloATM.TRANSFERENCIA_EXITOSA)) {
 			throw new Exception(resultado);
 		}
